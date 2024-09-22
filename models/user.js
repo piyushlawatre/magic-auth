@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
-import { isEmail } from "validator";
 import bcrypt from "bcrypt";
+import validator from "validator";
 
 const userSchema = new Schema({
   name: {
@@ -12,7 +12,7 @@ const userSchema = new Schema({
     required: [true, "A user must have an email"],
     unique: true,
     lowercase: true,
-    validate: [isEmail, "Provide a valid email"],
+    validate: [validator.isEmail, "Provide a valid email"],
   },
   password: {
     type: String,
