@@ -134,3 +134,7 @@ export const protect = async (req, res, next) => {
   req.user = user;
   next();
 };
+
+export const getUser = (req, res) => {
+  res.json({ message: "This is a protected route", user: req.user });
+};
