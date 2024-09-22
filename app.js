@@ -16,6 +16,8 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
+app.use(express.json({ limit: "10kb" }));
+
 app.use("/api/v1/users", userRouter);
 
 app.use("*", (req, res, next) => {
