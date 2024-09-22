@@ -10,6 +10,7 @@ export const signUp = async (req, res, next) => {
       confirmPassword: req.body.confirmPassword,
     });
 
+    console.log("user create");
     const email = new Email(
       newUser,
       `${req.protocol}://${req.get("host")}/api/v1/users/login`
