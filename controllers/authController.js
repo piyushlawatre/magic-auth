@@ -1,8 +1,5 @@
 export const signUp = async (req, res, next) => {
   try {
-    if (1) {
-      throw new Error("Something went wrong");
-    }
     res.json({
       statusCode: 200,
       message: "signup ",
