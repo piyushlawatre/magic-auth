@@ -34,13 +34,13 @@ export const login = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email: userEmail }).select("+password");
-
+    console.log(user._id);
     if (!user || !(await user.comparePassword(password))) {
       throw new Error("Invalid email or password", 401);
     }
 
     const token = jwt.sign(
-      { email: userEmail, id: userEmail._id },
+      { email: userEmail, id: user._id },
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRES_IN,
@@ -112,10 +112,7 @@ export const protect = async (req, res, next) => {
     return next(new Error(`You are not logged in! Please login`, 401));
   }
 
-  const decodedPayload = await promisify(jwt.verify)(
-    token,
-    process.env.JWT_SECRET
-  );
+  const decodedPayload = jwt.verify(token, process.env.JWT_SECRET);
 
   const user = await User.findById(decodedPayload.id).select(
     "+isSessionActive"

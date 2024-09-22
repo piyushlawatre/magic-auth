@@ -14,6 +14,6 @@ router.route("/login").post(login);
 router.route("/verify").post(verifyMagicLink);
 
 // This is protected route
-router.route("/user").get(protect, getUser);
+router.route("/").get(protect, getUser);
 
 export default router;
