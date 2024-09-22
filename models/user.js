@@ -30,9 +30,17 @@ const userSchema = new Schema({
       message: "Passwords do not match",
     },
   },
-  isActive: {
+  magicToken: {
+    type: String,
+    select: false,
+  },
+  magicTokenExpiry: {
+    type: Date,
+    select: false,
+  },
+  isSessionActive: {
     type: Boolean,
-    default: true,
+    default: false,
     select: false,
   },
 });
