@@ -39,16 +39,22 @@ export const login = async (req, res, next) => {
       throw new Error("Invalid email or password", 401);
     }
 
-    const token = jwt.sign({ email: userEmail }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+    const token = jwt.sign(
+      { email: userEmail, id: userEmail._id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      }
+    );
 
-    user.createMagicToken();
+    const magicToken = user.createMagicToken();
     await user.save({ validateBeforeSave: false });
 
     const email = new Email(
       user,
-      `${req.protocol}://${req.get("host")}/api/v1/users/verify?token=${token}`
+      `${req.protocol}://${req.get(
+        "host"
+      )}/api/v1/users/verify?token=${magicToken}`
     );
     await email.sendMagicLinkForSignUp();
 
@@ -92,4 +98,39 @@ export const verifyMagicLink = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const protect = async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  } else {
+    return next(new Error(`You are not logged in! Please login`, 401));
+  }
+
+  const decodedPayload = await promisify(jwt.verify)(
+    token,
+    process.env.JWT_SECRET
+  );
+
+  const user = await User.findById(decodedPayload.id).select(
+    "+isSessionActive"
+  );
+
+  if (!user) {
+    return next(new Error("The user belonging to token no longer exists", 400));
+  }
+
+  if (!user.isSessionActive) {
+    return next(
+      new Error("Session is not active. Please verify the magic link", 403)
+    );
+  }
+
+  req.user = user;
+  next();
 };

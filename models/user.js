@@ -58,16 +58,12 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 };
 
 userSchema.methods.createMagicToken = function () {
-  this.magicToken = crypto
-    .createHash("sha256")
-    .update(crypto.randomBytes(32).toString("hex"))
-    .digest("hex");
-
+  this.magicToken = crypto.randomBytes(32).toString("hex");
   this.magicTokenExpiry =
     Date.now() + parseInt(process.env.MAGIC_TOKEN_EXPIRES_IN);
-
   this.isSessionActive = false;
+
+  return this.magicToken;
 };
 
-const User = model("User", userSchema);
-export default User;
+export default User = model("User", userSchema);
