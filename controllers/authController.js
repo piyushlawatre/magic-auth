@@ -30,27 +30,24 @@ export const login = async (req, res, next) => {
   try {
     const { email: userEmail, password } = req.body;
     if (!userEmail || !password) {
-      throw new AppError("Please provide both email and password", 400);
+      throw new Error("Please provide both email and password", 400);
     }
 
-    const user = await User.findOne({ userEmail }).select("+password");
+    const user = await User.findOne({ email: userEmail }).select("+password");
 
     if (!user || !(await user.comparePassword(password))) {
-      throw new AppError("Invalid email or password", 401);
+      throw new Error("Invalid email or password", 401);
     }
 
-    const token = jwt.sign({ userEmail }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ email: userEmail }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    user.magicToken = token;
-    user.magicTokenExpiry =
-      Date.now() + parseInt(process.env.MAGIC_TOKEN_EXPIRES_I);
-
-    await user.save();
+    user.createMagicToken();
+    await user.save({ validateBeforeSave: false });
 
     const email = new Email(
-      newUser,
+      user,
       `${req.protocol}://${req.get("host")}/api/v1/users/verify?token=${token}`
     );
     await email.sendMagicLinkForSignUp();
@@ -59,6 +56,38 @@ export const login = async (req, res, next) => {
       status: "success",
       message:
         "Login successful! A magic link has been sent to your email. Please check your inbox to proceed.",
+      jwt: token,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyMagicLink = async (req, res, next) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      throw new Error("Invalid or missing token", 400);
+    }
+    const user = await User.findOne({
+      magicToken: token,
+      magicTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      throw new Error("Token is invalid or has expired", 400);
+    }
+
+    user.isSessionActive = true;
+    user.magicToken = undefined;
+    user.magicTokenExpiry = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      status: "success",
+      message: "Magic link verified. Session is now active!",
     });
   } catch (error) {
     next(error);

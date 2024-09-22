@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
 import validator from "validator";
+import crypto from "crypto";
 
 const userSchema = new Schema({
   name: {
@@ -54,6 +55,18 @@ userSchema.pre("save", async function (next) {
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+userSchema.methods.createMagicToken = function () {
+  this.magicToken = crypto
+    .createHash("sha256")
+    .update(crypto.randomBytes(32).toString("hex"))
+    .digest("hex");
+
+  this.magicTokenExpiry =
+    Date.now() + parseInt(process.env.MAGIC_TOKEN_EXPIRES_IN);
+
+  this.isSessionActive = false;
 };
 
 const User = model("User", userSchema);
